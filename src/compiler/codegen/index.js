@@ -73,6 +73,7 @@ export function genElement (el: ASTElement, state: CodegenState): string {
     // component or element
     let code
     if (el.component) {
+      //如果是is 动态组件
       code = genComponent(el.component, el, state)
     } else {
       let data
@@ -574,6 +575,7 @@ function genComponent (
   el: ASTElement,
   state: CodegenState
 ): string {
+  //inlineTemplate标识，生成渲染函数，代替当组件的渲染函数
   const children = el.inlineTemplate ? null : genChildren(el, state, true)
   return `_c(${componentName},${genData(el, state)}${
     children ? `,${children}` : ''

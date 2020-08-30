@@ -5,11 +5,10 @@ import { remove } from '../util/index'
 import config from '../config'
 
 let uid = 0
-
 /**
- * A dep is an observable that can have multiple
- * directives subscribing to it.
- */
+  * dep是可观察的，可以有多个
+  *订阅它的指令。
+  */
 export default class Dep {
   static target: ?Watcher;
   id: number;
@@ -17,7 +16,7 @@ export default class Dep {
 
   constructor () {
     this.id = uid++
-    this.subs = []
+    this.subs = [];// watcher[]添加所有
   }
 
   addSub (sub: Watcher) {
@@ -30,10 +29,10 @@ export default class Dep {
 
   depend () {
     if (Dep.target) {
-      Dep.target.addDep(this)
+      Dep.target.addDep(this);//把当前dep添加到watcher里面
     }
   }
-
+  //通知当前依赖对象下面，所有观察对象更新
   notify () {
     // stabilize the subscriber list first
     const subs = this.subs.slice()

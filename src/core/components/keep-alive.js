@@ -82,7 +82,7 @@ export default {
 
   render () {
     const slot = this.$slots.default
-    const vnode: VNode = getFirstComponentChild(slot)
+    const vnode: VNode = getFirstComponentChild(slot);//获取第一个子节点
     const componentOptions: ?VNodeComponentOptions = vnode && vnode.componentOptions
     if (componentOptions) {
       // check pattern

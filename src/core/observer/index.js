@@ -19,9 +19,9 @@ import {
 const arrayKeys = Object.getOwnPropertyNames(arrayMethods)
 
 /**
- * In some cases we may want to disable observation inside a component's
- * update computation.
- */
+  *在某些情况下，我们可能希望禁用组件内部的观察
+  *更新计算。
+  */
 export let shouldObserve: boolean = true
 
 export function toggleObserving (value: boolean) {
@@ -41,7 +41,7 @@ export class Observer {
 
   constructor (value: any) {
     this.value = value
-    this.dep = new Dep()
+    this.dep = new Dep();//依赖对象
     this.vmCount = 0
     def(value, '__ob__', this)
     if (Array.isArray(value)) {
@@ -103,18 +103,21 @@ function copyAugment (target: Object, src: Object, keys: Array<string>) {
 }
 
 /**
- * Attempt to create an observer instance for a value,
- * returns the new observer if successfully observed,
- * or the existing observer if the value already has one.
- */
+*尝试为值创建观察者实例，
+*如果观察成功，则返回新的观察者，
+*或者现有的观察者（如果值已经有）。
+*/
 export function observe (value: any, asRootData: ?boolean): Observer | void {
+  // 如果不是对象或节点，就返回
   if (!isObject(value) || value instanceof VNode) {
     return
   }
   let ob: Observer | void
+  //如果是Observer对象标识
   if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer) {
     ob = value.__ob__
-  } else if (
+  } //如果可以观察，并且不是服务器渲染，并且是数组或纯对象，并且可扩展，并且不是vue实例
+  else if (
     shouldObserve &&
     !isServerRendering() &&
     (Array.isArray(value) || isPlainObject(value)) &&
@@ -124,45 +127,51 @@ export function observe (value: any, asRootData: ?boolean): Observer | void {
     ob = new Observer(value)
   }
   if (asRootData && ob) {
-    ob.vmCount++
+    ob.vmCount++;//计算被引用次数
   }
   return ob
 }
 
 /**
- * Define a reactive property on an Object.
+ *在对象上定义反应性属性。
  */
 export function defineReactive (
   obj: Object,
   key: string,
   val: any,
-  customSetter?: ?Function,
-  shallow?: boolean
+  customSetter?: ?Function,// 用于调试
+  shallow?: boolean //如果为true浅观察,否则深度观察
 ) {
-  const dep = new Dep()
+  const dep = new Dep();//属性依赖对象
 
   const property = Object.getOwnPropertyDescriptor(obj, key)
+  // 如果属性不可配置，就跳过
   if (property && property.configurable === false) {
     return
   }
 
   // cater for pre-defined getter/setters
+  //满足预定义的吸气剂/定型剂
   const getter = property && property.get
   const setter = property && property.set
   if ((!getter || setter) && arguments.length === 2) {
     val = obj[key]
   }
-
+  //如果值是对象或数组，设置为观察实例对象
   let childOb = !shallow && observe(val)
   Object.defineProperty(obj, key, {
     enumerable: true,
     configurable: true,
     get: function reactiveGetter () {
+      //如果值本身存在getter，优先通过getter获取值
       const value = getter ? getter.call(obj) : val
+      // Dep.target是全局watcher对象，如果存在
       if (Dep.target) {
-        dep.depend()
+        dep.depend();//把当前dep追加到watcher
+        //如果当前值是观察对象，就追加到watcher中
         if (childOb) {
           childOb.dep.depend()
+          // 如果是数组，递归把数组中所有观察对象的dep，添加到watcher中
           if (Array.isArray(value)) {
             dependArray(value)
           }
@@ -181,14 +190,16 @@ export function defineReactive (
         customSetter()
       }
       // #7981: for accessor properties without setter
+      // 如果是只读属性，就跳过
       if (getter && !setter) return
       if (setter) {
         setter.call(obj, newVal)
       } else {
         val = newVal
       }
+      //为新值，设置为观察对象
       childOb = !shallow && observe(newVal)
-      dep.notify()
+      dep.notify();//通知当前dep下面所有watcher对象，更新
     }
   })
 }

@@ -41,8 +41,8 @@ export function initLifecycle (vm: Component) {
     parent.$children.push(vm)
   }
 
-  vm.$parent = parent
-  vm.$root = parent ? parent.$root : vm
+  vm.$parent = parent;//父实例 
+  vm.$root = parent ? parent.$root : vm;//根实列
 
   vm.$children = []
   vm.$refs = {}
@@ -58,28 +58,32 @@ export function initLifecycle (vm: Component) {
 export function lifecycleMixin (Vue: Class<Component>) {
   Vue.prototype._update = function (vnode: VNode, hydrating?: boolean) {
     const vm: Component = this
-    const prevEl = vm.$el
-    const prevVnode = vm._vnode
+    const prevEl = vm.$el;// 当前DOM节点，组件的$el一般为空
+    const prevVnode = vm._vnode;//上个虚拟子节点
+    // 设置当前vm实例，为全局正在活动的实例 
     const restoreActiveInstance = setActiveInstance(vm)
-    vm._vnode = vnode
+    vm._vnode = vnode;//当前组件的虚拟子节点 render()
     // Vue.prototype.__patch__ is injected in entry points
     // based on the rendering backend used.
     if (!prevVnode) {
-      // initial render
+      // initial render 如果不存在上个节点，就直接挂机el下面
       vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */)
     } else {
-      // updates
+      // updates 如果存在就对比
       vm.$el = vm.__patch__(prevVnode, vnode)
     }
-    restoreActiveInstance()
+    restoreActiveInstance();//对比完后，重置活动中
     // update __vue__ reference
     if (prevEl) {
       prevEl.__vue__ = null
     }
     if (vm.$el) {
-      vm.$el.__vue__ = vm
+      vm.$el.__vue__ = vm;//把实例挂在dom节点上
     }
     // if parent is an HOC, update its $el as well
+    //如果父项是HOC，则也要更新其$ el
+    //如果当前的虚拟节点是父实例的子节点，就设置父实例$el
+    //通常当组件是父级实例的根组件，他们就相等
     if (vm.$vnode && vm.$parent && vm.$vnode === vm.$parent._vnode) {
       vm.$parent.$el = vm.$el
     }
@@ -137,7 +141,7 @@ export function lifecycleMixin (Vue: Class<Component>) {
     }
   }
 }
-
+// platform-web-$mount>runtime-index-$mount>mountComponent
 export function mountComponent (
   vm: Component,
   el: ?Element,
@@ -164,7 +168,7 @@ export function mountComponent (
       }
     }
   }
-  callHook(vm, 'beforeMount')
+  callHook(vm, 'beforeMount');//开始挂载
 
   let updateComponent
   /* istanbul ignore if */
@@ -186,16 +190,21 @@ export function mountComponent (
       measure(`vue ${name} patch`, startTag, endTag)
     }
   } else {
+    // 观察函数，用于收集所有渲染依赖
+    // 第一次触发是同步进行
     updateComponent = () => {
+      // 执行_render创建vnode,同时会触发defineReactive
+      //并执行__patch__更新vnode
       vm._update(vm._render(), hydrating)
     }
   }
 
-  // we set this to vm._watcher inside the watcher's constructor
-  // since the watcher's initial patch may call $forceUpdate (e.g. inside child
-  // component's mounted hook), which relies on vm._watcher being already defined
+    //我们将其设置为观察者构造函数中的vm._watcher
+   //因为观察者的初始补丁可能会调用$ forceUpdate（例如，在child内部
+   //组件的挂接钩），它依赖于已定义的vm._watcher
   new Watcher(vm, updateComponent, noop, {
     before () {
+      // 如果是已挂载，watcher run运行前
       if (vm._isMounted && !vm._isDestroyed) {
         callHook(vm, 'beforeUpdate')
       }
@@ -203,8 +212,9 @@ export function mountComponent (
   }, true /* isRenderWatcher */)
   hydrating = false
 
-  // manually mounted instance, call mounted on self
-  // mounted is called for render-created child components in its inserted hook
+    //手动安装的实例，在自身上调用安装
+   // mount会在其插入的钩子中调用渲染创建的子组件
+   //一般子组件的$vnode是不会为null的
   if (vm.$vnode == null) {
     vm._isMounted = true
     callHook(vm, 'mounted')
@@ -334,15 +344,16 @@ export function deactivateChildComponent (vm: Component, direct?: boolean) {
 }
 
 export function callHook (vm: Component, hook: string) {
-  // #7573 disable dep collection when invoking lifecycle hooks
+  // #7573 调用生命周期钩子时禁用dep集合
   pushTarget()
-  const handlers = vm.$options[hook]
+  const handlers = vm.$options[hook];//获取自身定义的hooks
   const info = `${hook} hook`
   if (handlers) {
     for (let i = 0, j = handlers.length; i < j; i++) {
       invokeWithErrorHandling(handlers[i], vm, null, vm, info)
     }
   }
+  // 如果存在$on('hook:xxx')钩子，就执行
   if (vm._hasHookEvent) {
     vm.$emit('hook:' + hook)
   }

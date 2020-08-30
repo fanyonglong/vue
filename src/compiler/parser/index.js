@@ -99,8 +99,8 @@ export function parse (
   const whitespaceOption = options.whitespace
   let root
   let currentParent
-  let inVPre = false
-  let inPre = false
+  let inVPre = false;//标识v-pre指令
+  let inPre = false;//标识是不是pre标签
   let warned = false
 
   function warnOnce (msg, range) {
@@ -111,13 +111,14 @@ export function parse (
   }
 
   function closeElement (element) {
-    trimEndingWhitespace(element)
+    trimEndingWhitespace(element);
+    // 如果当前不在跳过v-pre范围内。并且节点未处理
     if (!inVPre && !element.processed) {
       element = processElement(element, options)
     }
     // tree management
     if (!stack.length && element !== root) {
-      // allow root elements with v-if, v-else-if and v-else
+      // 允许根元素使用v-if、v-else-if和v-else
       if (root.if && (element.elseif || element.else)) {
         if (process.env.NODE_ENV !== 'production') {
           checkRootConstraints(element)
@@ -135,6 +136,7 @@ export function parse (
         )
       }
     }
+    // 
     if (currentParent && !element.forbidden) {
       if (element.elseif || element.else) {
         processIfConditions(element, currentParent)
@@ -157,14 +159,15 @@ export function parse (
     // remove trailing whitespace node again
     trimEndingWhitespace(element)
 
-    // check pre state
+    // check pre state 如果是v-pre
     if (element.pre) {
       inVPre = false
     }
+    // 是否pre标签
     if (platformIsPreTag(element.tag)) {
       inPre = false
     }
-    // apply post-transforms
+    // 应用后转换
     for (let i = 0; i < postTransforms.length; i++) {
       postTransforms[i](element, options)
     }
@@ -203,10 +206,10 @@ export function parse (
 
   parseHTML(template, {
     warn,
-    expectHTML: options.expectHTML,
-    isUnaryTag: options.isUnaryTag,
-    canBeLeftOpenTag: options.canBeLeftOpenTag,
-    shouldDecodeNewlines: options.shouldDecodeNewlines,
+    expectHTML: options.expectHTML,//规范html
+    isUnaryTag: options.isUnaryTag,// true不需要闭合的标签,false 没有闭合的标签自动闭合
+    canBeLeftOpenTag: options.canBeLeftOpenTag,// 对未闭合的标签，自动闭合
+    shouldDecodeNewlines: options.shouldDecodeNewlines,// 解码换行符
     shouldDecodeNewlinesForHref: options.shouldDecodeNewlinesForHref,
     shouldKeepComment: options.comments,
     outputSourceRange: options.outputSourceRange,
@@ -248,7 +251,7 @@ export function parse (
           }
         })
       }
-
+      //如果是style或script标签
       if (isForbiddenTag(element) && !isServerRendering()) {
         element.forbidden = true
         process.env.NODE_ENV !== 'production' && warn(
@@ -259,55 +262,62 @@ export function parse (
         )
       }
 
-      // apply pre-transforms
+      // 应用预转换
       for (let i = 0; i < preTransforms.length; i++) {
         element = preTransforms[i](element, options) || element
       }
-
+    
       if (!inVPre) {
+        //跳过这个元素和它的子元素的编译过程。
+        //可以用来显示原始 Mustache 标签。跳过大量没有指令的节点会加快编译。
         processPre(element)
         if (element.pre) {
           inVPre = true
         }
       }
+      
       if (platformIsPreTag(element.tag)) {
         inPre = true
       }
+      // 如果存在v-pre指令，
       if (inVPre) {
-        processRawAttrs(element)
+        processRawAttrs(element);//为ast元素添加attrs属性
       } else if (!element.processed) {
         // structural directives
         processFor(element)
         processIf(element)
         processOnce(element)
       }
-
+      //设第一个元素为根元素
       if (!root) {
         root = element
         if (process.env.NODE_ENV !== 'production') {
           checkRootConstraints(root)
         }
       }
-
+      //如果不是自动闭合标签
       if (!unary) {
-        currentParent = element
-        stack.push(element)
+        currentParent = element;//设当前节点为父
+        // 用来记录标签闭合时，查找元素
+        stack.push(element);//添加当前元素到栈列表，先进后出
       } else {
+        //如果是自动闭合标签
         closeElement(element)
       }
     },
 
     end (tag, start, end) {
+      // 取栈中最后一个元素，表示当前闭标签是该元素
       const element = stack[stack.length - 1]
       // pop stack
-      stack.length -= 1
-      currentParent = stack[stack.length - 1]
+      stack.length -= 1;//把当前元素移出栈中
+      currentParent = stack[stack.length - 1];//设上个元素当前父元素
       if (process.env.NODE_ENV !== 'production' && options.outputSourceRange) {
         element.end = end
       }
       closeElement(element)
     },
-
+    //处理标签中的文本子节点
     chars (text: string, start: number, end: number) {
       if (!currentParent) {
         if (process.env.NODE_ENV !== 'production') {
@@ -333,7 +343,9 @@ export function parse (
       ) {
         return
       }
-      const children = currentParent.children
+      //获取文本节点的，父级节点，
+      const children = currentParent.children;
+      //如果是pre标签并且文本不为空
       if (inPre || text.trim()) {
         text = isTextTag(currentParent) ? text : decodeHTMLCached(text)
       } else if (!children.length) {
@@ -359,8 +371,8 @@ export function parse (
         let child: ?ASTNode
         if (!inVPre && text !== ' ' && (res = parseText(text, delimiters))) {
           child = {
-            type: 2,
-            expression: res.expression,
+            type: 2,//标识为文本节点
+            expression: res.expression,//{{text}}表达式
             tokens: res.tokens,
             text
           }
@@ -380,7 +392,7 @@ export function parse (
       }
     },
     comment (text: string, start, end) {
-      // adding anyting as a sibling to the root node is forbidden
+      // adding anything as a sibling to the root node is forbidden
       // comments should still be allowed, but ignored
       if (currentParent) {
         const child: ASTText = {
@@ -430,7 +442,7 @@ export function processElement (
   element: ASTElement,
   options: CompilerOptions
 ) {
-  processKey(element)
+  processKey(element);
 
   // determine whether this is a plain element after
   // removing structural attributes
@@ -489,9 +501,9 @@ function processRef (el) {
 export function processFor (el: ASTElement) {
   let exp
   if ((exp = getAndRemoveAttr(el, 'v-for'))) {
-    const res = parseFor(exp)
+    const res = parseFor(exp)//解析v-for表达式
     if (res) {
-      extend(el, res)
+      extend(el, res);//添加到el上面
     } else if (process.env.NODE_ENV !== 'production') {
       warn(
         `Invalid v-for expression: ${exp}`,
@@ -531,6 +543,7 @@ function processIf (el) {
   const exp = getAndRemoveAttr(el, 'v-if')
   if (exp) {
     el.if = exp
+    //为el创建ifConditions数组，存储表达式
     addIfCondition(el, {
       exp: exp,
       block: el
@@ -747,6 +760,7 @@ function processSlotOutlet (el) {
 
 function processComponent (el) {
   let binding
+  // 如果存在is属性。表示为动态组件
   if ((binding = getBindingAttr(el, 'is'))) {
     el.component = binding
   }
@@ -760,10 +774,11 @@ function processAttrs (el) {
   let i, l, name, rawName, value, modifiers, syncGen, isDynamic
   for (i = 0, l = list.length; i < l; i++) {
     name = rawName = list[i].name
-    value = list[i].value
+    value = list[i].value;
+    //如果是指令
     if (dirRE.test(name)) {
       // mark element as dynamic
-      el.hasBindings = true
+      el.hasBindings = true;//标识元素有动态绑定指令
       // modifiers
       modifiers = parseModifiers(name.replace(dirRE, ''))
       // support .foo shorthand syntax for the .prop modifier

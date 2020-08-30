@@ -152,7 +152,7 @@ function initData (vm: Component) {
 }
 
 export function getData (data: Function, vm: Component): any {
-  // #7573 disable dep collection when invoking data getters
+  // #7573 调用数据获取程序时禁用dep收集
   pushTarget()
   try {
     return data.call(vm, vm)
@@ -184,6 +184,7 @@ function initComputed (vm: Component, computed: Object) {
 
     if (!isSSR) {
       // create internal watcher for the computed property.
+      //为计算的属性创建内部监视程序。
       watchers[key] = new Watcher(
         vm,
         getter || noop,
@@ -192,9 +193,9 @@ function initComputed (vm: Component, computed: Object) {
       )
     }
 
-    // component-defined computed properties are already defined on the
-    // component prototype. We only need to define computed properties defined
-    // at instantiation here.
+     //组件定义的计算属性已经在
+     //组件原型。 我们只需要定义定义的计算属性
+     //在此处实例化。
     if (!(key in vm)) {
       defineComputed(vm, key, userDef)
     } else if (process.env.NODE_ENV !== 'production') {
@@ -213,12 +214,14 @@ export function defineComputed (
   userDef: Object | Function
 ) {
   const shouldCache = !isServerRendering()
+  // 如果计算属性是函数，仅只读
   if (typeof userDef === 'function') {
     sharedPropertyDefinition.get = shouldCache
       ? createComputedGetter(key)
       : createGetterInvoker(userDef)
     sharedPropertyDefinition.set = noop
   } else {
+    // 如果存在set
     sharedPropertyDefinition.get = userDef.get
       ? shouldCache && userDef.cache !== false
         ? createComputedGetter(key)
@@ -242,9 +245,12 @@ function createComputedGetter (key) {
   return function computedGetter () {
     const watcher = this._computedWatchers && this._computedWatchers[key]
     if (watcher) {
+      //如果是脏检查，第一次执行脏计算收集
       if (watcher.dirty) {
-        watcher.evaluate()
+        watcher.evaluate();//把当前watcher添加到vm的属性dep subs订阅列表中
+        //设置dirty为false，保证下次，不再计算，除非观察属性值，有更新
       }
+      // 如果存在target,就把当前watchr所有依赖,添加到target watcher中
       if (Dep.target) {
         watcher.depend()
       }
@@ -306,6 +312,7 @@ function createWatcher (
   handler: any,
   options?: Object
 ) {
+  //如果观察属性，定义的是一个对象
   if (isPlainObject(handler)) {
     options = handler
     handler = handler.handler
@@ -313,6 +320,7 @@ function createWatcher (
   if (typeof handler === 'string') {
     handler = vm[handler]
   }
+  //
   return vm.$watch(expOrFn, handler, options)
 }
 
@@ -352,8 +360,10 @@ export function stateMixin (Vue: Class<Component>) {
       return createWatcher(vm, expOrFn, cb, options)
     }
     options = options || {}
-    options.user = true
-    const watcher = new Watcher(vm, expOrFn, cb, options)
+    options.user = true//打印捕异常
+    //默认执行get计算
+    const watcher = new Watcher(vm, expOrFn, cb, options);
+    // 如果立即执行，
     if (options.immediate) {
       try {
         cb.call(vm, watcher.value)

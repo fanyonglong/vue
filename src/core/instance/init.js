@@ -26,13 +26,14 @@ export function initMixin (Vue: Class<Component>) {
       mark(startTag)
     }
 
-    // a flag to avoid this being observed
+    //一个避免被观察到的标志
     vm._isVue = true
     // merge options
+    // 如果是组件
     if (options && options._isComponent) {
-      // optimize internal component instantiation
-      // since dynamic options merging is pretty slow, and none of the
-      // internal component options needs special treatment.
+      //优化内部组件实例化
+      //因为动态选项合并非常慢，而且
+      //内部组件选项需要特殊处理。
       initInternalComponent(vm, options)
     } else {
       vm.$options = mergeOptions(
@@ -89,9 +90,11 @@ export function initInternalComponent (vm: Component, options: InternalComponent
     opts.staticRenderFns = options.staticRenderFns
   }
 }
-
+//解析构造选项
 export function resolveConstructorOptions (Ctor: Class<Component>) {
-  let options = Ctor.options
+  //获取当前VUE所有options
+  let options = Ctor.options;//获取 'component','directive','filter'
+  //如果存在父级，就合并
   if (Ctor.super) {
     const superOptions = resolveConstructorOptions(Ctor.super)
     const cachedSuperOptions = Ctor.superOptions

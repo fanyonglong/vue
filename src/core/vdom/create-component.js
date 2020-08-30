@@ -44,14 +44,15 @@ const componentVNodeHooks = {
       const mountedNode: any = vnode // work around flow
       componentVNodeHooks.prepatch(mountedNode, mountedNode)
     } else {
+      //创建组件实例,$vnode==_parentNode,代表当前组件虚拟节点。 _vnode代表当前组件渲染函数返回的节点
       const child = vnode.componentInstance = createComponentInstanceForVnode(
         vnode,
-        activeInstance
+        activeInstance //当前活动的vue实例 
       )
       child.$mount(hydrating ? vnode.elm : undefined, hydrating)
     }
   },
-
+ // 组件更新
   prepatch (oldVnode: MountedComponentVNode, vnode: MountedComponentVNode) {
     const options = vnode.componentOptions
     const child = vnode.componentInstance = oldVnode.componentInstance
@@ -66,6 +67,7 @@ const componentVNodeHooks = {
 
   insert (vnode: MountedComponentVNode) {
     const { context, componentInstance } = vnode
+    //准备挂载
     if (!componentInstance._isMounted) {
       componentInstance._isMounted = true
       callHook(componentInstance, 'mounted')
@@ -182,7 +184,7 @@ export function createComponent (
     }
   }
 
-  // install component management hooks onto the placeholder node
+  //将组件管理挂钩安装到占位符节点上
   installComponentHooks(data)
 
   // return a placeholder vnode
@@ -210,9 +212,9 @@ export function createComponentInstanceForVnode (
   parent: any, // activeInstance in lifecycle state
 ): Component {
   const options: InternalComponentOptions = {
-    _isComponent: true,
-    _parentVnode: vnode,
-    parent
+    _isComponent: true,//标识是组件
+    _parentVnode: vnode,//设置父虚拟节点
+    parent //父VUE实例 
   }
   // check inline-template render functions
   const inlineTemplate = vnode.data.inlineTemplate

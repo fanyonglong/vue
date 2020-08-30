@@ -68,7 +68,9 @@ export function createCompilerCreator (baseCompile: Function): Function {
     }
 
     return {
+      //编译函数
       compile,
+      //编译成渲染函数
       compileToFunctions: createCompileToFunctionFn(compile)
     }
   }

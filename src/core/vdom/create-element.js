@@ -121,6 +121,7 @@ export function _createElement (
       )
     }
   } else {
+    // 实例直接创建的组件
     // direct component options / constructor
     vnode = createComponent(tag, data, context, children)
   }
