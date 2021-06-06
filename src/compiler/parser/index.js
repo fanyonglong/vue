@@ -38,7 +38,7 @@ const modifierRE = /\.[^.\]]+(?=[^\]]*$)/g
 const slotRE = /^v-slot(:|$)|^#/
 
 const lineBreakRE = /[\r\n]/
-const whitespaceRE = /\s+/g
+const whitespaceRE = /[ \f\t\r\n]+/g
 
 const invalidAttributeRE = /[\s"'<>\/=]/
 
@@ -86,9 +86,18 @@ export function parse (
   platformMustUseProp = options.mustUseProp || no
   platformGetTagNamespace = options.getTagNamespace || no
   const isReservedTag = options.isReservedTag || no
+<<<<<<< HEAD
   maybeComponent = (el: ASTElement) => !!el.component || !isReservedTag(el.tag)
 
   // 编译运行时转换模块 platforms/web/compiler/modules
+=======
+  maybeComponent = (el: ASTElement) => !!(
+    el.component ||
+    el.attrsMap[':is'] ||
+    el.attrsMap['v-bind:is'] ||
+    !(el.attrsMap.is ? isReservedTag(el.attrsMap.is) : isReservedTag(el.tag))
+  )
+>>>>>>> source/dev
   transforms = pluckModuleFunction(options.modules, 'transformNode')
   preTransforms = pluckModuleFunction(options.modules, 'preTransformNode')
   postTransforms = pluckModuleFunction(options.modules, 'postTransformNode')
