@@ -12,21 +12,26 @@ import {
 } from 'core/vdom/helpers/index'
 
 export const transitionProps = {
-  name: String,
-  appear: Boolean,
-  css: Boolean,
-  mode: String,
-  type: String,
-  enterClass: String,
-  leaveClass: String,
-  enterToClass: String,
-  leaveToClass: String,
-  enterActiveClass: String,
-  leaveActiveClass: String,
+  name: String,// 用于自动生成 CSS 过渡类名。例如：name: 'fade' 将自动拓展为 .fade-enter，.fade-enter-active 等。默认类名为 "v"
+  appear: Boolean,// 是否在初始渲染时使用过渡。默认为 false。
+  css: Boolean,// 是否使用 CSS 过渡类。默认为 true。如果设置为 false，将只通过组件事件触发注册的 JavaScript 钩子。
+  /*
+  同时生效的进入和离开的过渡不能满足所有要求，所以 Vue 提供了过渡模式
+  in-out：新元素先进行过渡，完成之后当前元素过渡离开。
+  out-in：当前元素先进行过渡，完成之后新元素过渡进入。
+  */
+  mode: String,// 控制离开/进入过渡的时间序列。有效的模式有 "out-in" 和 "in-out"；默认同时进行。
+  type: String,// 指定过渡事件类型，侦听过渡何时结束。有效值为 "transition" 和 "animation"。默认 Vue.js 将自动检测出持续时间长的为过渡事件类型。
+  enterClass: String,// 定义进入过渡的开始状态。在元素被插入之前生效，在元素被插入之后的下一帧移除。
+  leaveClass: String, //定义离开过渡的开始状态。在离开过渡被触发时立刻生效，下一帧被移除。
+  enterToClass: String,//2.1.8 版及以上定义进入过渡的结束状态。在元素被插入之后下一帧生效 (与此同时 v-enter 被移除)，在过渡/动画完成之后移除。
+  leaveToClass: String,// 2.1.8 版及以上定义离开过渡的结束状态。在离开过渡被触发之后下一帧生效 (与此同时 v-leave 被删除)，在过渡/动画完成之后移除。
+  enterActiveClass: String,//定义进入过渡生效时的状态。在整个进入过渡的阶段中应用，在元素被插入之前生效，在过渡/动画完成之后移除。这个类可以被用来定义进入过渡的过程时间，延迟和曲线函数。
+  leaveActiveClass: String,//定义离开过渡生效时的状态。在整个离开过渡的阶段中应用，在离开过渡被触发时立刻生效，在过渡/动画完成之后移除。这个类可以被用来定义离开过渡的过程时间，延迟和曲线函数。
   appearClass: String,
   appearActiveClass: String,
   appearToClass: String,
-  duration: [Number, String, Object]
+  duration: [Number, String, Object] // number | { enter: number, leave: number } 指定过渡的持续时间。默认情况下，Vue 会等待过渡所在根元素的第一个 transitionend 或 animationend 事件。
 }
 
 // in case the child is also an abstract component, e.g. <keep-alive>

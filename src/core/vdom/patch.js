@@ -29,7 +29,9 @@ import {
 } from '../util/index'
 
 export const emptyNode = new VNode('', {}, [])
-
+/**
+ * create 
+ */
 const hooks = ['create', 'activate', 'update', 'remove', 'destroy']
 
 function sameVnode (a, b) {
@@ -193,7 +195,7 @@ export function createPatchFunction (backend) {
         // 深度优先递归子节点
         createChildren(vnode, children, insertedVnodeQueue)
         if (isDef(data)) {
-          //深度优先，等所有子创建完后，执行craate钩子，有insert钩子的vnode也添加到insertedVnodeQueue
+          //深度优先，等所有子创建完后，执行create钩子，有insert钩子的vnode也添加到insertedVnodeQueue
           invokeCreateHooks(vnode, insertedVnodeQueue)
         }
         insert(parentElm, vnode.elm, refElm);//插入到父DOM节点下面

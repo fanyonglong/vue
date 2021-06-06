@@ -108,7 +108,7 @@ export function enter (vnode: VNodeWithData, toggleDisplay: ?() => void) {
   if (process.env.NODE_ENV !== 'production' && explicitEnterDuration != null) {
     checkDuration(explicitEnterDuration, 'enter', vnode)
   }
-
+  // 是否期望使用css动画
   const expectsCSS = css !== false && !isIE9
   const userWantsControl = getHookArgumentsLength(enterHook)
 

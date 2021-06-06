@@ -173,7 +173,7 @@ export default class Watcher {
    */
   update () {
     /* istanbul ignore else */
-    //延迟手动更新，可用于大批量修改属性时，等待全部修改完后，手动更新
+    //延迟手动更新，可用于大批量修改属性时，等待全部修改完后，手动更新,当计算属性内部依赖的data属性发生变化时
     if (this.lazy) {
       this.dirty = true;//用于计算属性手动执行，evaluate
     } else if (this.sync) {
